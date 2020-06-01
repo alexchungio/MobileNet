@@ -418,11 +418,11 @@ def global_pool(input_tensor, pool_op=tf.nn.avg_pool):
   return output
 
 
-def training_scope(is_training=True,
+def training_scope(is_training=False,
                    weight_decay=0.00004,
                    stddev=0.09,
                    dropout_keep_prob=0.8,
-                   bn_decay=0.997):
+                   bn_decay=0.9997):
   """Defines Mobilenet training scope.
 
   Usage:
