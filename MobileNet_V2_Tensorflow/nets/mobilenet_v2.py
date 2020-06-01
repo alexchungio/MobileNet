@@ -118,7 +118,6 @@ class MobileNetV2():
                                    num_classes= self.num_classes,
                                    is_training = self.is_training,
                                    depth_multiplier=self.depth_multiplier,
-                                   keep_prob = self.keep_prob,
                                    scope=sc)
 
         return prop
@@ -220,7 +219,6 @@ class MobileNetV2():
         # define trainable variable
         # define frozen layer
 
-        # trainable_scope = ['vgg_16/fc6', 'vgg_16/fc7', 'vgg_16/fc8']
         if trainable_scope is not None:
             trainable_variable = []
             for scope in trainable_scope:
@@ -234,13 +232,11 @@ class MobileNetV2():
                                                    staircase=False)
         # # according to use request of slim.batch_norm
         # # update moving_mean and moving_variance when training
-        # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        # with tf.control_dependencies(update_ops):
-        #     train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.loss, global_step=global_step,
-        #                                                                          var_list=trainable_variable)
-        train_op = tf.train.GradientDescentOptimizer(learning_rate).minimize(self.loss, global_step=global_step,
-                                                                             var_list=trainable_variable)
-        return train_op
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            train_op = tf.train.RMSPropOptimizer(learning_rate).minimize(self.loss, global_step=global_step,
+                                                                                 var_list=trainable_variable)
+            return train_op
 
     def load_weights(self, sess, model_path, custom_scope=None):
         """
@@ -253,7 +249,7 @@ class MobileNetV2():
 
         model_variable = tf.model_variables()
         if custom_scope is None:
-            custom_scope = ['vgg_16/fc8']
+            custom_scope = ['MobilenetV2/Logits/Conv2d_1c_1x1']
         for scope in custom_scope:
             variables = tf.model_variables(scope=scope)
             [model_variable.remove(var) for var in variables]
@@ -298,10 +294,9 @@ class MobileNetV2():
         correct_predict = tf.equal(tf.argmax(input=logits, axis=1), tf.argmax(input=labels, axis=1))
         return tf.reduce_mean(tf.cast(correct_predict, dtype=tf.float32))
 
-    def fill_feed_dict(self, image_feed, label_feed, is_training):
+    def fill_feed_dict(self, image_feed, label_feed):
         feed_dict = {
             self.raw_input_data: image_feed,
             self.raw_input_label: label_feed,
-            self.is_training: is_training
         }
         return feed_dict
