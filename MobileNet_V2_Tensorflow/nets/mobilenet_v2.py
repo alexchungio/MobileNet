@@ -71,8 +71,8 @@ class MobileNetV2():
     """
     VGG16 model
     """
-    def __init__(self, input_shape, num_classes, batch_size, decay_rate, learning_rate, depth_multiplier=1.0,
-                 keep_prob=0.8, weight_decay=0.00004, num_samples_per_epoch=None, num_epoch_per_decay=None,
+    def __init__(self, input_shape=(224, 224, 3), num_classes=5, batch_size=32, decay_rate=0.9, learning_rate=0.0001,
+                 depth_multiplier=0.75, keep_prob=0.8, weight_decay=0.00004, num_samples_per_epoch=0, num_epoch_per_decay=0,
                  is_training=False):
         self.num_classes = num_classes
         self.batch_size = batch_size
@@ -103,11 +103,12 @@ class MobileNetV2():
 
         # logits
         self.logits =  self.inference(inputs=self.raw_input_data, name='MobilenetV2')
-        # computer loss value
-        self.loss = self.losses(labels=self.raw_input_label, logits=self.logits, name='loss')
-        # train operation
-        self.train = self.training(self.learning_rate, self.global_step)
-        self.accuracy = self.get_accuracy(logits=self.logits, labels=self.raw_input_label)
+        if self.is_training:
+            # computer loss value
+            self.loss = self.losses(labels=self.raw_input_label, logits=self.logits, name='loss')
+            # train operation
+            self.train = self.training(self.learning_rate, self.global_step)
+            self.accuracy = self.get_accuracy(logits=self.logits, labels=self.raw_input_label)
 
     def inference(self, inputs, name):
         """
