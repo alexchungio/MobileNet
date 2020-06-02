@@ -343,7 +343,6 @@ def dataset_tfrecord(record_files, target_shape, class_depth, epoch=5, batch_siz
     :param record_file:
     :return:
     """
-    record_list = []
     # check record file format
     if os.path.isfile(record_files):
         record_list = [record_files]
@@ -426,15 +425,12 @@ def get_num_samples(record_dir):
     :return:
     """
 
-    record_list = []
-    # check record file format
-
-    for filename in os.listdir(record_dir):
-        record_list.append(os.path.join(record_dir, filename))
+    record_list = [os.path.join(record_dir, record_file) for record_file in os.listdir(record_dir)
+                   if record_file.split('.')[-1] == 'record']
 
     num_samples = 0
     for record_file in record_list:
-        for record in tf_record_iterator(record_file):
+        for _ in tf_record_iterator(record_file):
             num_samples += 1
     return num_samples
 
