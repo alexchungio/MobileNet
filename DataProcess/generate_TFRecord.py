@@ -15,7 +15,8 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
-import cv2 as cv
+
+from Utils.tools import view_bar, makedir
 
 original_dataset_dir = '/home/alex/Documents/dataset/flower_split'
 train_src = os.path.join(original_dataset_dir, 'train')
@@ -26,19 +27,6 @@ target_dataset_dir = '/home/alex/Documents/dataset/flower_tfrecord'
 train_target = os.path.join(target_dataset_dir, 'train')
 val_target = os.path.join(target_dataset_dir, 'val')
 
-
-def makedir(path):
-    """
-    create dir
-    :param path:
-    :return:
-    """
-    if os.path.exists(path) is False:
-        try:
-            os.makedirs(path)
-            print('{0} has been created'.format(path))
-        except Exception as e:
-            print(e)
 
 #+++++++++++++++++++++++++++++++++++++++++generate tfrecord+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -76,7 +64,7 @@ def execute_tfrecord(source_path, outputs_path, per_record_capacity=500, shuffle
                     img_name_list=img_names,
                     labels_list=img_labels,
                     record_capacity=per_record_capacity)
-    print("There are {0} samples has successfully convert to tfrecord, save at {1}".format(num_samples,
+    print("\nThere are {0} samples has successfully convert to tfrecord, save at {1}".format(num_samples,
                                                                                            outputs_path))
     # image_to_record(save_path=test_record_path,
     #                 img_name_list=test_name_list,
@@ -108,6 +96,7 @@ def image_to_record(save_path, img_name_list, labels_list=None, record_capacity=
     else:
         num_record = int(len(img_name_list) / record_capacity) + 1
 
+    count = 1
     for index in range(num_record):
         record_filename = os.path.join(save_path, 'tfrecord-{0}.record'.format(index))
         writer = tf.io.TFRecordWriter(record_filename)
@@ -129,6 +118,9 @@ def image_to_record(save_path, img_name_list, labels_list=None, record_capacity=
             image_record = image_example(image=image, label=label, img_height=height, img_width=width, img_depth=depth,
                                          filename=img_name)
             writer.write(record=image_record)
+
+            view_bar(message='Conversion progress', num=count, total=len(img_name_list))
+            count += 1
 
         writer.close()
 
