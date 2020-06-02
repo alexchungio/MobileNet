@@ -45,7 +45,7 @@ flags.DEFINE_integer('batch_size', 32, 'Batch size Must divide evenly into the d
 flags.DEFINE_integer('epoch', 30, 'Number of epoch size.')
 flags.DEFINE_float('learning_rate', 0.0001, 'Initial learning rate.')
 flags.DEFINE_float('decay_rate', 0.9, 'Number of learning decay rate.')
-flags.DEFINE_float('depth_multiplier', 1.0, 'Number of depth multiplier')
+flags.DEFINE_float('depth_multiplier', 1.0, 'Number of depth multiplier, value choose from 0.5, 0.75, 1.0, 1.4')
 flags.DEFINE_integer('num_epoch_per_decay', 20, 'Number epoch after each leaning rate decay.')
 flags.DEFINE_float('keep_prop', 0.8, 'Number of probability that each element is kept.')
 flags.DEFINE_float('weight_decay', 0.00004, 'Number of regular scale size')
@@ -163,7 +163,8 @@ if __name__ == "__main__":
         # get model variable of network
         model_variable = tf.model_variables()
         for var in model_variable:
-            print(var.name)
+            print(var.op.name)
+            print(var.shape)
         # get and add histogram to summary protocol buffer
         logit_weight = graph.get_tensor_by_name(name='MobilenetV2/Logits/Conv2d_1c_1x1/weights:0')
         tf.summary.histogram(name='logits/weight', values=logit_weight)
