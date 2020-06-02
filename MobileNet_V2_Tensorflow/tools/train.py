@@ -76,38 +76,6 @@ def makedir(path):
             print(e)
 
 
-def predict(model_name, image_data, input_op_name, predict_op_name):
-    """
-    model read and predict
-    :param model_name:
-    :param image_data:
-    :param input_op_name:
-    :param predict_op_name:
-    :return:
-    """
-    with tf.Graph().as_default():
-        with tf.gfile.FastGFile(name=model_name, mode='rb') as model_file:
-            graph_def = tf.GraphDef()
-            graph_def.ParseFromString(model_file.read())
-            _ = tf.import_graph_def(graph_def, name='')
-        for index, layer in enumerate(graph_def.node):
-            print(index, layer.name)
-
-    with tf.Session() as sess:
-        init_op = tf.group(
-            tf.global_variables_initializer(),
-            tf.local_variables_initializer()
-        )
-        sess.run(init_op)
-        image = image_data.eval()
-        input = sess.graph.get_tensor_by_name(name=input_op_name)
-        output = sess.graph.get_tensor_by_name(name=predict_op_name)
-
-        predict = sess.run(fetches=output, feed_dict={input: image})
-        predict_label = np.argmax(predict, axis=1)
-        return predict_label
-
-
 if __name__ == "__main__":
 
     num_train_samples = get_num_samples(record_dir=FLAGS.train_data_dir)
@@ -129,14 +97,14 @@ if __name__ == "__main__":
                                weight_decay=FLAGS.weight_decay,
                                is_training=True)
 
-    train_images_batch, train_labels_batch, train_filenames = dataset_tfrecord(record_file=FLAGS.train_data_dir,
+    train_images_batch, train_labels_batch, train_filenames = dataset_tfrecord(record_files=FLAGS.train_data_dir,
                                                                   batch_size=FLAGS.batch_size,
                                                                   target_shape=[FLAGS.height, FLAGS.width, FLAGS.depth],
                                                                   class_depth=FLAGS.num_classes,
                                                                   epoch=FLAGS.epoch,
                                                                   shuffle=True,
                                                                   is_training=True)
-    val_images_batch, val_labels_batch, val_filenames = dataset_tfrecord(record_file=FLAGS.test_data_dir,
+    val_images_batch, val_labels_batch, val_filenames = dataset_tfrecord(record_files=FLAGS.test_data_dir,
                                                                    batch_size=FLAGS.batch_size,
                                                                    target_shape=[FLAGS.height, FLAGS.width, FLAGS.depth],
                                                                    class_depth=FLAGS.num_classes,
@@ -158,7 +126,7 @@ if __name__ == "__main__":
         sess.run(init_op)
         # get computer graph
         graph = tf.get_default_graph()
-
+        logit_op = mobilenet_v2.logits.op.name
         write = tf.summary.FileWriter(logdir=FLAGS.logs_dir, graph=graph)
         # get model variable of network
         model_variable = tf.model_variables()
