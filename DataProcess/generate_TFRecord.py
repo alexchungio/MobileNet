@@ -55,10 +55,13 @@ def execute_tfrecord(source_path, outputs_path, per_record_capacity=500, shuffle
 
     img_names, img_labels, classes_map = get_label_data(source_path, shuffle=shuffle)
 
-
     # test_record_path = os.path.join(outputs_path, 'test')
     makedir(outputs_path)
-    # makedir(test_record_path)
+
+    # save class map infor
+    with open(os.path.join(outputs_path, 'label_map.txt'), 'w') as fw:
+        for index, name in classes_map.items():
+            fw.write(f'{index},{name}\n')
 
     num_samples = len(img_names)
     # test_data_num = int(num_samples * split_ratio)
@@ -144,6 +147,7 @@ def get_label_data(data_path, classes_map=None, shuffle=True):
 
     if classes_map is None:
         # classes name
+        # sorted operation ensure to the train and validation dataset has equal class map
         for subdir in sorted(os.listdir(data_path)):
             if os.path.isdir(os.path.join(data_path, subdir)):
                 class_map[subdir] = len(class_map)
