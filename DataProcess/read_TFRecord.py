@@ -337,8 +337,7 @@ def distorted_bounding_box_crop(image,
 
 
 
-def dataset_tfrecord(record_file, target_shape, class_depth, epoch=5, batch_size=10, shuffle=True,
-                    preprocessing_type = 'vgg', fast_mode=True, is_training=False):
+def dataset_tfrecord(record_files, target_shape, class_depth, epoch=5, batch_size=10, shuffle=True, is_training=False):
     """
     construct iterator to read image
     :param record_file:
@@ -346,11 +345,11 @@ def dataset_tfrecord(record_file, target_shape, class_depth, epoch=5, batch_size
     """
     record_list = []
     # check record file format
-    if os.path.isfile(record_file):
-        record_list = [record_file]
+    if os.path.isfile(record_files):
+        record_list = [record_files]
     else:
-        for filename in os.listdir(record_file):
-            record_list.append(os.path.join(record_file, filename))
+        record_list = [os.path.join(record_files, record_file) for record_file in os.listdir(record_files)
+                       if record_file.split('.')[-1] == 'record']
     # # use dataset read record file
     raw_img_dataset = tf.data.TFRecordDataset(record_list)
     # execute parse function to get dataset
@@ -378,22 +377,22 @@ def dataset_tfrecord(record_file, target_shape, class_depth, epoch=5, batch_size
     return image, label, filename
 
 
-def reader_tfrecord(record_file, target_shape, class_depth, batch_size=10, num_threads=2, epoch=5, shuffle=True,
-                    preprocessing_type='vgg', fast_mode=True, is_training=False):
+def reader_tfrecord(record_files, target_shape, class_depth, batch_size=10, num_threads=2, epoch=5, shuffle=True,
+                    is_training=False):
     """
     read and sparse TFRecord
     :param record_file:
     :return:
     """
-    record_tensor = []
+    record_list = []
     # check record file format
-    if os.path.isfile(record_file):
-        record_tensor = [record_file]
+    if os.path.isfile(record_files):
+        record_list = [record_files]
     else:
-        for filename in os.listdir(record_file):
-            record_tensor.append(os.path.join(record_file, filename))
+        record_list = [os.path.join(record_files, record_file) for record_file in os.listdir(record_files)
+                       if record_file.split('.')[-1] == 'record']
     # create input queue
-    filename_queue = tf.train.string_input_producer(string_tensor=record_tensor, num_epochs=epoch, shuffle=shuffle)
+    filename_queue = tf.train.string_input_producer(string_tensor=record_list, num_epochs=epoch, shuffle=shuffle)
     # create reader to read TFRecord sample instant
     reader = tf.TFRecordReader()
     # read one sample instant
@@ -442,7 +441,7 @@ def get_num_samples(record_dir):
 if __name__ == "__main__":
     num_samples = get_num_samples(train_data_path)
     print('all sample size is {0}'.format(num_samples))
-    image_batch, label_batch, filename = dataset_tfrecord(record_file=train_data_path, target_shape=[224, 224, 3],
+    image_batch, label_batch, filename = dataset_tfrecord(record_files=train_data_path, target_shape=[224, 224, 3],
                                                           class_depth=5, is_training=True)
 
     # create local and global variables initializer group
@@ -450,6 +449,9 @@ if __name__ == "__main__":
         tf.global_variables_initializer(),
         tf.local_variables_initializer()
     )
+    # os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
     with tf.Session() as sess:
         sess.run(init_op)
 
