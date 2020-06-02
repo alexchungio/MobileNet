@@ -21,6 +21,7 @@ from MobileNet_V2_Tensorflow.nets.mobilenet_v2 import MobileNetV2
 
 meta_path = os.path.join('../outputs/model', 'model.ckpt-2730.meta')
 model_path = os.path.join('../outputs/model', 'model.ckpt-2730')
+model_pb_path = os.path.join('../outputs/model', 'model.pb')
 
 image_path = './demo/rose_1.jpg'
 
@@ -85,10 +86,44 @@ def visualize_predict(predict, class_name):
     ax.set_title('predict result')
     plt.show()
 
-if __name__ == "__main__":
 
-    mobilenet_v2 = MobileNetV2(is_training=False)
+def predict_with_pb(model_path, image, input_op_name, logits_op_name):
+    """
+    model read and predict
+    :param model_path:
+    :param image_data:
+    :param input_op_name:
+    :param logits_op_name:
+    :return:
+    """
 
+    with tf.gfile.FastGFile(name=model_path, mode='rb') as model_file:
+        graph_def = tf.GraphDef.FromString(model_file.read())
+        input_op, logits_op = tf.import_graph_def(graph_def, return_elements=[input_op_name, logits_op_name])
+
+    init_op = tf.group(tf.global_variables_initializer(),
+                       tf.local_variables_initializer())
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    with tf.Session(config=config, graph=input_op.graph) as sess:
+        sess.run(init_op)
+        # get graph
+        graph = tf.get_default_graph()
+        # get tensor name
+        tensor_name_list = [tensor.name for tensor in graph.as_graph_def().node]
+
+        prob = sess.run(fetches=logits_op, feed_dict={input_op: image})
+
+        return prob
+
+def inference_with_ckpt(image_path, target_size=(224, 224)):
+    """
+
+    :param image_path:
+    :param target_size:
+    :return:
+    """
+    MobileNetV2(is_training=False)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     init_op = tf.group(tf.global_variables_initializer(),
@@ -96,30 +131,49 @@ if __name__ == "__main__":
     with tf.Session(config=config) as sess:
         sess.run(init_op)
 
-        # restorer = tf.train.import_meta_graph(meta_path)
         # Restore using exponential moving average since it produces (1.5-2%) higher accuracy
         # ema = tf.train.ExponentialMovingAverage(0.999)
         # vars = ema.variables_to_restore()
-
         restorer = tf.train.Saver()
-        # restorer.restore(sess, save_path=tf.train.latest_checkpoint(checkpoint_dir='./outputs/model'))
         restorer.restore(sess, save_path=model_path)
 
         # get graph
         graph = tf.get_default_graph()
         # get tensor name
-        tensor_name_list = [tensor.name for tensor in graph.as_graph_def().node]
-        print(tensor_name_list)
+        # tensor_name_list = [tensor.name for tensor in graph.as_graph_def().node]
 
         image_placeholder = graph.get_tensor_by_name('input_images:0')
-        label_placeholder = graph.get_tensor_by_name('class_label:0')
 
         prob = graph.get_tensor_by_name('MobilenetV2/MobilenetV2/Predictions/Softmax:0')
 
-        image_batch = image_preprocess(image_path, target_size=(224, 224))
+        image_batch = image_preprocess(image_path, target_size=target_size)
+
         feed_dict = {image_placeholder: image_batch}
 
         prob = sess.run(prob, feed_dict=feed_dict)
+
+        return prob
+
+
+def inference_with_pb(image_path, target_size=(224, 224)):
+    """
+
+    :param image_path:
+    :param target_size:
+    :return:
+    """
+    input_op_name = 'input_images:0'
+    logits_op_name = 'MobilenetV2/MobilenetV2/Predictions/Reshape_1:0'
+    image_batch = image_preprocess(image_path, target_size=target_size)
+    prob = predict_with_pb(model_path=model_pb_path, image=image_batch, input_op_name=input_op_name,
+                    logits_op_name=logits_op_name)
+    return prob
+
+
+if __name__ == "__main__":
+
+        prob = inference_with_ckpt(image_path)
+        # prob = inference_with_pb(image_path)
         predict_label = int(np.argmax(prob))
         print('This is a {0} with possibility {1}'.format(class_name[predict_label], prob[0][predict_label]))
 
