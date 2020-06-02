@@ -25,7 +25,7 @@ def view_bar(message, num, total):
     sys.stdout.flush()
 
 
-def make_dir(path):
+def makedir(path):
     """
     create dir
     :param path:
