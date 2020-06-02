@@ -13,9 +13,7 @@
 
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
-
 import copy
-import functools
 
 from MobileNet_V2_Tensorflow.libs import conv_blocks as ops
 import MobileNet_V2_Tensorflow.libs.mobilenet as lib
@@ -87,6 +85,12 @@ class MobileNetV2():
         self.weight_decay = weight_decay
         self.is_training = is_training
 
+        # compatible last layer size of small multipliers
+        if self.depth_multiplier < 1.0:
+            self.fine_grain = True
+        else:
+            self.fine_grain = False
+
         self.raw_input_data = tf.placeholder(tf.float32, shape=[None, input_shape[0], input_shape[1], input_shape[2]],
                                              name="input_images")
         # self.raw_input_data = self.mean_subtraction(image=self.raw_input_data,
@@ -118,6 +122,7 @@ class MobileNetV2():
                                    num_classes= self.num_classes,
                                    is_training = self.is_training,
                                    depth_multiplier=self.depth_multiplier,
+                                   finegrain_classification_mode = self.fine_grain,
                                    scope=sc)
 
         return prop
@@ -197,15 +202,14 @@ class MobileNetV2():
                 depth_args['divisible_by'] = divisible_by
 
             with slim.arg_scope((lib.depth_multiplier,), **depth_args):
-                logits, end_points = lib.mobilenet(
-                                            inputs,
-                                            num_classes=num_classes,
-                                            conv_defs=conv_defs,
-                                            scope=scope,
-                                            multiplier=depth_multiplier,
-                                            **kwargs)
-                prop = end_points['Predictions']
-                return prop
+                logits, end_points = lib.mobilenet(inputs,
+                                                   num_classes=num_classes,
+                                                   conv_defs=conv_defs,
+                                                   scope=scope,
+                                                   multiplier=depth_multiplier,
+                                                   **kwargs)
+                prob = end_points['Predictions']
+                return prob
 
 
     def training(self, learning_rate, global_step, trainable_scope=None):
