@@ -120,7 +120,6 @@ class MobileNetV2():
         with tf.variable_scope(name, reuse=None) as sc:
             prop = self.mobilenet_v2(inputs=inputs,
                                    num_classes= self.num_classes,
-                                   is_training = self.is_training,
                                    depth_multiplier=self.depth_multiplier,
                                    finegrain_classification_mode = self.fine_grain,
                                    scope=sc)
@@ -176,7 +175,7 @@ class MobileNetV2():
         """
         with tf.contrib.slim.arg_scope(lib.training_scope(weight_decay=self.weight_decay,
                                                           dropout_keep_prob=self.keep_prob,
-                                                          is_training=False)):
+                                                          is_training=self.is_training)):
             if conv_defs is None:
                 conv_defs = V2_DEF
             if 'multiplier' in kwargs:
