@@ -123,7 +123,7 @@ def inference_with_ckpt(image_path, target_size=(224, 224)):
     :param target_size:
     :return:
     """
-    MobileNetV2(is_training=False)
+    MobileNetV2(depth_multiplier=0.75, is_training=False)
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     init_op = tf.group(tf.global_variables_initializer(),
