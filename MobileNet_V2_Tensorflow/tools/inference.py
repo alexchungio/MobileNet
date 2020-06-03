@@ -144,6 +144,7 @@ def inference_with_ckpt(image_path, target_size=(224, 224)):
 
         image_placeholder = graph.get_tensor_by_name('input_images:0')
 
+        # prob = graph.get_tensor_by_name('MobilenetV2/MobilenetV2/Predictions/Reshape_1:0')
         prob = graph.get_tensor_by_name('MobilenetV2/MobilenetV2/Predictions/Softmax:0')
 
         image_batch = image_preprocess(image_path, target_size=target_size)
@@ -163,7 +164,7 @@ def inference_with_pb(image_path, target_size=(224, 224)):
     :return:
     """
     input_op_name = 'input_images:0'
-    logits_op_name = 'MobilenetV2/MobilenetV2/Predictions/Reshape_1:0'
+    logits_op_name = 'MobilenetV2/MobilenetV2/Predictions/Softmax:0'
     image_batch = image_preprocess(image_path, target_size=target_size)
     prob = predict_with_pb(model_path=model_pb_path, image=image_batch, input_op_name=input_op_name,
                     logits_op_name=logits_op_name)
