@@ -1,5 +1,5 @@
 # MobileNet
-MobileNet 
+MobileNetV2 
 
 ## dataset
 https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz
