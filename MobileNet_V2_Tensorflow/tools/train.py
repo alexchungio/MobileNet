@@ -97,6 +97,10 @@ if __name__ == "__main__":
                                weight_decay=FLAGS.weight_decay,
                                is_training=True)
 
+    # add scalar value to summary protocol buffer
+    tf.summary.scalar('loss', mobilenet_v2.loss)
+    tf.summary.scalar('accuracy', mobilenet_v2.accuracy)
+
     train_images_batch, train_labels_batch, train_filenames = dataset_tfrecord(record_files=FLAGS.train_data_dir,
                                                                   batch_size=FLAGS.batch_size,
                                                                   target_shape=[FLAGS.height, FLAGS.width, FLAGS.depth],
